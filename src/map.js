@@ -30,6 +30,7 @@ export function cellsToString(cells, width, bg = { r: 0, g: 0, b: 0 }) {
 
 export function cellsToHtml(cells, width, alphaMode = 'char') {
   let html = '';
+  let spanCount = 0;
   let i = 0;
 
   while (i < cells.length) {
@@ -55,13 +56,15 @@ export function cellsToHtml(cells, width, alphaMode = 'char') {
       ? `rgba(${ri},${gi},${bi},${ai})`
       : `rgb(${ri},${gi},${bi})`;
 
-    const run = char === ' '
-      ? ' '.repeat(j - i)
-      : `<span style="color:${color}">${char.repeat(j - i)}</span>`;
+    if (char === ' ') {
+      html += ' '.repeat(j - i);
+    } else {
+      spanCount++;
+      html += `<span style="color:${color}">${char.repeat(j - i)}</span>`;
+    }
 
-    html += run;
     i = j;
   }
 
-  return html;
+  return { html, spanCount, cellCount: cells.length };
 }

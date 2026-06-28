@@ -14,7 +14,7 @@ import { cellsToString, cellsToHtml } from './map.js';
  *   alphaMode?: 'char' | 'css',
  *   bg?: { r: number, g: number, b: number }
  * }} options
- * @returns {Promise<string>}
+ * @returns {Promise<{ result: string, stats: { plainChars: number, rawChars: number, spans?: number, cells?: number } }>}
  */
 export async function imageToBlockArt(source, {
     width = 80,
@@ -26,7 +26,23 @@ export async function imageToBlockArt(source, {
 } = {}) {
     const { data, width: srcWidth, height: srcHeight } = await decodeImage(source);
     const cells = sample(data, srcWidth, srcHeight, width, height, method);
-    return mode === 'color'
-        ? cellsToHtml(cells, width, alphaMode)
-        : cellsToString(cells, width, bg);
+
+    if (mode === 'color') {
+        const { html, spanCount, cellCount } = cellsToHtml(cells, width, alphaMode);
+        return {
+            result: html,
+            stats: {
+                plainChars: cellCount + height,
+                rawChars: html.length,
+                spans: spanCount,
+                cells: cellCount,
+            },
+        };
+    }
+
+    const result = cellsToString(cells, width, bg);
+    return {
+        result,
+        stats: { plainChars: result.length, rawChars: result.length },
+    };
 }

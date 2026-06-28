@@ -57,7 +57,8 @@
     #copy-bar {
       display: flex;
       gap: 0.75rem;
-      margin-bottom: 1rem;
+      align-items: center;
+      margin-bottom: 0.5rem;
     }
 
     #copy-bar button {
@@ -71,6 +72,21 @@
 
     #copy-bar button:hover {
       background: #333;
+    }
+
+    #stats {
+      font-size: 0.8rem;
+      color: #666;
+      margin-bottom: 1rem;
+      min-height: 1.2em;
+    }
+
+    #stats span {
+      color: #aaa;
+    }
+
+    #stats .saved {
+      color: #6f6;
     }
 
     #output {
@@ -116,6 +132,7 @@
     <button id="copy-visual">copy as plain text</button>
     <button id="copy-raw">copy raw tags</button>
   </div>
+  <div id="stats"></div>
 
   <pre id="output"></pre>
 
@@ -134,6 +151,7 @@
     const widthVal = document.getElementById('width-val');
     const heightVal = document.getElementById('height-val');
     const output = document.getElementById('output');
+    const statsEl = document.getElementById('stats');
 
     widthEl.addEventListener('input', () => { widthVal.textContent = widthEl.value; rerender(); });
     heightEl.addEventListener('input', () => { heightVal.textContent = heightEl.value; rerender(); });
@@ -144,6 +162,19 @@
     methodEl.addEventListener('change', rerender);
     alphaModeEl.addEventListener('change', rerender);
 
+    function fmt(n) { return n.toLocaleString(); }
+
+    function renderStats(stats, mode) {
+      if (mode === 'color') {
+        const unoptimized = stats.cells * `<span style="color:rgb(255,255,255)">█</span>`.length;
+        const saved = unoptimized - stats.rawChars;
+        const pct = Math.round(saved / unoptimized * 100);
+        statsEl.innerHTML = `plain <span>${fmt(stats.plainChars)}</span> chars · raw tags <span>${fmt(stats.rawChars)}</span> chars · rle saved <span class="saved">~${fmt(saved)} chars (${pct}%)</span>`;
+      } else {
+        statsEl.innerHTML = `<span>${fmt(stats.plainChars)}</span> chars`;
+      }
+    }
+
     async function render(source) {
       lastSource = source;
       rerender();
@@ -152,9 +183,10 @@
     async function rerender() {
       if (!lastSource) return;
       output.textContent = 'rendering...';
+      statsEl.textContent = '';
 
       const mode = modeEl.value;
-      const result = await imageToBlockArt(lastSource, {
+      const { result, stats } = await imageToBlockArt(lastSource, {
         width: Number(widthEl.value),
         height: Number(heightEl.value),
         method: methodEl.value,
@@ -169,6 +201,8 @@
       } else {
         output.textContent = result;
       }
+
+      renderStats(stats, mode);
     }
 
     document.getElementById('copy-visual').addEventListener('click', () => {
