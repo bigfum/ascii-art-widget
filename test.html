@@ -11,7 +11,7 @@
   </style>
 </head>
 <body>
-  <div id="drop">drop an image here or <label style="cursor:pointer;text-decoration:underline">click to upload<input type="file" accept="image/*" style="display:none" id="file"></label></div>
+  <div id="drop">drop an image here, <label style="cursor:pointer;text-decoration:underline">click to upload<input type="file" accept="image/*" style="display:none" id="file"></label>, or paste from clipboard</div>
   <pre id="output"></pre>
 
   <script type="module">
@@ -34,6 +34,11 @@
       e.preventDefault();
       drop.classList.remove('over');
       if (e.dataTransfer.files[0]) render(e.dataTransfer.files[0]);
+    });
+
+    document.addEventListener('paste', e => {
+      const item = [...e.clipboardData.items].find(i => i.type.startsWith('image/'));
+      if (item) render(item.getAsFile());
     });
   </script>
 </body>
