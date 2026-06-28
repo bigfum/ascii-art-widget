@@ -25,14 +25,16 @@ export async function imageToBlockArt(source, {
     mode = 'luminance',
     alphaMode = 'char',
     posterize: posterizeLevels = 0,
+    halfBlocks = false,
     bg = { r: 0, g: 0, b: 0 },
 } = {}) {
     const { data, width: srcWidth, height: srcHeight } = await decodeImage(source);
-    let cells = sample(data, srcWidth, srcHeight, width, height, method);
+    const sampleHeight = halfBlocks ? height * 2 : height;
+    let cells = sample(data, srcWidth, srcHeight, width, sampleHeight, method);
     cells = posterize(cells, posterizeLevels);
 
     if (mode === 'color') {
-        const { html, spanCount, cellCount } = cellsToHtml(cells, width, alphaMode);
+        const { html, spanCount, cellCount } = cellsToHtml(cells, width, alphaMode, halfBlocks);
         return {
             result: html,
             stats: {

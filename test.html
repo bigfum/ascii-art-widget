@@ -74,6 +74,13 @@
       background: #333;
     }
 
+    #status {
+      font-size: 0.8rem;
+      color: #555;
+      margin-bottom: 0.25rem;
+      min-height: 1.2em;
+    }
+
     #stats {
       font-size: 0.8rem;
       color: #666;
@@ -93,6 +100,11 @@
       line-height: 1;
       font-size: 12px;
       white-space: pre;
+    }
+
+    #output.half-blocks {
+      line-height: 12px;
+      font-size: 12px;
     }
   </style>
 </head>
@@ -120,6 +132,11 @@
         <option value="css">css opacity</option>
       </select>
     </label>
+    <!-- half blocks shelved — rendering artifacts not resolved
+    <label id="half-blocks-label" style="display:none">half blocks
+      <input type="checkbox" id="half-blocks">
+    </label>
+    -->
     <label>posterize: <span id="posterize-val">off</span>
       <input type="range" id="posterize" min="0" max="15" value="0">
     </label>
@@ -135,6 +152,7 @@
     <button id="copy-visual">copy as plain text</button>
     <button id="copy-raw">copy raw tags</button>
   </div>
+  <div id="status"></div>
   <div id="stats"></div>
 
   <pre id="output"></pre>
@@ -144,11 +162,14 @@
 
     let lastSource = null;
     let lastRaw = '';
+    let renderToken = 0;
 
     const modeEl = document.getElementById('mode');
     const methodEl = document.getElementById('method');
     const alphaModeEl = document.getElementById('alpha-mode');
     const alphaModeLabelEl = document.getElementById('alpha-mode-label');
+    const halfBlocksEl = document.getElementById('half-blocks');
+    const halfBlocksLabelEl = document.getElementById('half-blocks-label');
     const posterizeEl = document.getElementById('posterize');
     const posterizeVal = document.getElementById('posterize-val');
     const widthEl = document.getElementById('width');
@@ -157,24 +178,17 @@
     const heightVal = document.getElementById('height-val');
     const output = document.getElementById('output');
     const statsEl = document.getElementById('stats');
+    const statusEl = document.getElementById('status');
+
+    function debounce(fn, ms) {
+      let t;
+      return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+    }
 
     function posterizeLevels() {
       const v = Number(posterizeEl.value);
       return v === 0 ? 0 : 17 - v;
     }
-    posterizeEl.addEventListener('input', () => {
-      const v = Number(posterizeEl.value);
-      posterizeVal.textContent = v === 0 ? 'off' : `${17 - v} levels`;
-      rerender();
-    });
-    widthEl.addEventListener('input', () => { widthVal.textContent = widthEl.value; rerender(); });
-    heightEl.addEventListener('input', () => { heightVal.textContent = heightEl.value; rerender(); });
-    modeEl.addEventListener('change', () => {
-      alphaModeLabelEl.style.display = modeEl.value === 'color' ? '' : 'none';
-      rerender();
-    });
-    methodEl.addEventListener('change', rerender);
-    alphaModeEl.addEventListener('change', rerender);
 
     function fmt(n) { return n.toLocaleString(); }
 
@@ -189,15 +203,10 @@
       }
     }
 
-    async function render(source) {
-      lastSource = source;
-      rerender();
-    }
-
     async function rerender() {
       if (!lastSource) return;
-      output.textContent = 'rendering...';
-      statsEl.textContent = '';
+      const token = ++renderToken;
+      statusEl.textContent = 'rendering...';
 
       const mode = modeEl.value;
       const { result, stats } = await imageToBlockArt(lastSource, {
@@ -207,29 +216,52 @@
         mode,
         alphaMode: alphaModeEl.value,
         posterize: posterizeLevels(),
+        halfBlocks: halfBlocksEl.checked,
       });
 
-      lastRaw = result;
+      if (token !== renderToken) return;
 
+      lastRaw = result;
       if (mode === 'color') {
         output.innerHTML = result;
       } else {
         output.textContent = result;
       }
-
       renderStats(stats, mode);
+      statusEl.textContent = '';
     }
+
+    const debouncedRerender = debounce(rerender, 120);
+
+    widthEl.addEventListener('input', () => { widthVal.textContent = widthEl.value; debouncedRerender(); });
+    heightEl.addEventListener('input', () => { heightVal.textContent = heightEl.value; debouncedRerender(); });
+    posterizeEl.addEventListener('input', () => {
+      const v = Number(posterizeEl.value);
+      posterizeVal.textContent = v === 0 ? 'off' : `${17 - v} levels`;
+      debouncedRerender();
+    });
+    modeEl.addEventListener('change', () => {
+      const isColor = modeEl.value === 'color';
+      alphaModeLabelEl.style.display = isColor ? '' : 'none';
+      halfBlocksLabelEl.style.display = isColor ? '' : 'none';
+      rerender();
+    });
+    methodEl.addEventListener('change', rerender);
+    alphaModeEl.addEventListener('change', rerender);
+    halfBlocksEl.addEventListener('change', () => {
+      output.classList.toggle('half-blocks', halfBlocksEl.checked);
+      rerender();
+    });
 
     document.getElementById('copy-visual').addEventListener('click', () => {
       navigator.clipboard.writeText(output.innerText);
     });
-
     document.getElementById('copy-raw').addEventListener('click', () => {
       navigator.clipboard.writeText(lastRaw);
     });
 
     document.getElementById('file').addEventListener('change', e => {
-      if (e.target.files[0]) render(e.target.files[0]);
+      if (e.target.files[0]) { lastSource = e.target.files[0]; rerender(); }
     });
 
     const drop = document.getElementById('drop');
@@ -238,12 +270,12 @@
     drop.addEventListener('drop', e => {
       e.preventDefault();
       drop.classList.remove('over');
-      if (e.dataTransfer.files[0]) render(e.dataTransfer.files[0]);
+      if (e.dataTransfer.files[0]) { lastSource = e.dataTransfer.files[0]; rerender(); }
     });
 
     document.addEventListener('paste', e => {
       const item = [...e.clipboardData.items].find(i => i.type.startsWith('image/'));
-      if (item) render(item.getAsFile());
+      if (item) { lastSource = item.getAsFile(); rerender(); }
     });
   </script>
 </body>
