@@ -1,0 +1,20 @@
+{
+  "name": "ascii-art-widget",
+  "version": "0.1.0",
+  "description": "Converts images to Unicode block art for rich text contexts and embeddable web widgets",
+  "type": "module",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "keywords": [
+    "ascii-art",
+    "unicode",
+    "image",
+    "widget"
+  ],
+  "license": "MIT"
+}
