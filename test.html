@@ -168,8 +168,6 @@
     const methodEl = document.getElementById('method');
     const alphaModeEl = document.getElementById('alpha-mode');
     const alphaModeLabelEl = document.getElementById('alpha-mode-label');
-    const halfBlocksEl = document.getElementById('half-blocks');
-    const halfBlocksLabelEl = document.getElementById('half-blocks-label');
     const posterizeEl = document.getElementById('posterize');
     const posterizeVal = document.getElementById('posterize-val');
     const widthEl = document.getElementById('width');
@@ -216,7 +214,7 @@
         mode,
         alphaMode: alphaModeEl.value,
         posterize: posterizeLevels(),
-        halfBlocks: halfBlocksEl.checked,
+        halfBlocks: false,
       });
 
       if (token !== renderToken) return;
@@ -243,15 +241,10 @@
     modeEl.addEventListener('change', () => {
       const isColor = modeEl.value === 'color';
       alphaModeLabelEl.style.display = isColor ? '' : 'none';
-      halfBlocksLabelEl.style.display = isColor ? '' : 'none';
       rerender();
     });
     methodEl.addEventListener('change', rerender);
     alphaModeEl.addEventListener('change', rerender);
-    halfBlocksEl.addEventListener('change', () => {
-      output.classList.toggle('half-blocks', halfBlocksEl.checked);
-      rerender();
-    });
 
     document.getElementById('copy-visual').addEventListener('click', () => {
       navigator.clipboard.writeText(output.innerText);
