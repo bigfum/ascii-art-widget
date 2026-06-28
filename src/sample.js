@@ -18,7 +18,7 @@ export function sample(data, srcWidth, srcHeight, outWidth, outHeight, method = 
 
 function getPixel(data, srcWidth, x, y) {
   const i = (y * srcWidth + x) * 4;
-  return { r: data[i], g: data[i + 1], b: data[i + 2] };
+  return { r: data[i], g: data[i + 1], b: data[i + 2], a: data[i + 3] };
 }
 
 function sampleNearest(data, srcWidth, srcHeight, outWidth, outHeight) {
@@ -42,13 +42,14 @@ function sampleArea(data, srcWidth, srcHeight, outWidth, outHeight) {
       const y0 = Math.floor(cy * srcHeight / outHeight);
       const y1 = Math.floor((cy + 1) * srcHeight / outHeight);
 
-      let r = 0, g = 0, b = 0, count = 0;
+      let r = 0, g = 0, b = 0, a = 0, count = 0;
       for (let y = y0; y < y1; y++) {
         for (let x = x0; x < x1; x++) {
           const px = getPixel(data, srcWidth, x, y);
           r += px.r;
           g += px.g;
           b += px.b;
+          a += px.a;
           count++;
         }
       }
@@ -56,7 +57,7 @@ function sampleArea(data, srcWidth, srcHeight, outWidth, outHeight) {
       if (count === 0) {
         cells.push(getPixel(data, srcWidth, x0, y0));
       } else {
-        cells.push({ r: r / count, g: g / count, b: b / count });
+        cells.push({ r: r / count, g: g / count, b: b / count, a: a / count });
       }
     }
   }
