@@ -1,27 +1,170 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>ascii-art-widget test</title>
   <style>
-    body { background: #111; color: #eee; font-family: monospace; padding: 2rem; }
-    #drop { border: 2px dashed #555; padding: 2rem; text-align: center; margin-bottom: 1rem; cursor: pointer; }
-    #drop.over { border-color: #fff; }
-    pre { line-height: 1; font-size: 12px; white-space: pre; }
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #111;
+      color: #eee;
+      font-family: monospace;
+      padding: 2rem;
+      margin: 0;
+    }
+
+    #drop {
+      border: 2px dashed #555;
+      padding: 2rem;
+      text-align: center;
+      margin-bottom: 1rem;
+      cursor: pointer;
+    }
+
+    #drop.over {
+      border-color: #fff;
+    }
+
+    #controls {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    #controls label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      font-size: 0.85rem;
+      color: #aaa;
+    }
+
+    #controls select,
+    #controls input[type=range] {
+      background: #222;
+      color: #eee;
+      border: 1px solid #444;
+      padding: 0.25rem 0.5rem;
+      font-family: monospace;
+    }
+
+    #copy-bar {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    #copy-bar button {
+      background: #222;
+      color: #eee;
+      border: 1px solid #444;
+      padding: 0.4rem 0.9rem;
+      cursor: pointer;
+      font-family: monospace;
+    }
+
+    #copy-bar button:hover {
+      background: #333;
+    }
+
+    #output {
+      line-height: 1;
+      font-size: 12px;
+      white-space: pre;
+    }
   </style>
 </head>
+
 <body>
-  <div id="drop">drop an image here, <label style="cursor:pointer;text-decoration:underline">click to upload<input type="file" accept="image/*" style="display:none" id="file"></label>, or paste from clipboard</div>
+  <div id="drop">drop an image here, <label style="cursor:pointer;text-decoration:underline">click to upload<input
+        type="file" accept="image/*" style="display:none" id="file"></label>, or paste from clipboard</div>
+
+  <div id="controls">
+    <label>mode
+      <select id="mode">
+        <option value="luminance">luminance</option>
+        <option value="color">color</option>
+      </select>
+    </label>
+    <label>sampling
+      <select id="method">
+        <option value="area">area avg</option>
+        <option value="nearest">nearest</option>
+      </select>
+    </label>
+    <label>width: <span id="width-val">120</span>
+      <input type="range" id="width" min="20" max="300" value="120">
+    </label>
+    <label>height: <span id="height-val">50</span>
+      <input type="range" id="height" min="10" max="150" value="50">
+    </label>
+  </div>
+
+  <div id="copy-bar">
+    <button id="copy-visual">copy as plain text</button>
+    <button id="copy-raw">copy raw tags</button>
+  </div>
+
   <pre id="output"></pre>
 
   <script type="module">
     import { imageToBlockArt } from './src/index.js';
 
+    let lastSource = null;
+    let lastRaw = '';
+
+    const modeEl = document.getElementById('mode');
+    const methodEl = document.getElementById('method');
+    const widthEl = document.getElementById('width');
+    const heightEl = document.getElementById('height');
+    const widthVal = document.getElementById('width-val');
+    const heightVal = document.getElementById('height-val');
+    const output = document.getElementById('output');
+
+    widthEl.addEventListener('input', () => { widthVal.textContent = widthEl.value; rerender(); });
+    heightEl.addEventListener('input', () => { heightVal.textContent = heightEl.value; rerender(); });
+    modeEl.addEventListener('change', rerender);
+    methodEl.addEventListener('change', rerender);
+
     async function render(source) {
-      document.getElementById('output').textContent = 'rendering...';
-      const art = await imageToBlockArt(source, { width: 120, height: 50 });
-      document.getElementById('output').textContent = art;
+      lastSource = source;
+      rerender();
     }
+
+    async function rerender() {
+      if (!lastSource) return;
+      output.textContent = 'rendering...';
+
+      const mode = modeEl.value;
+      const result = await imageToBlockArt(lastSource, {
+        width: Number(widthEl.value),
+        height: Number(heightEl.value),
+        method: methodEl.value,
+        mode,
+      });
+
+      lastRaw = result;
+
+      if (mode === 'color') {
+        output.innerHTML = result;
+      } else {
+        output.textContent = result;
+      }
+    }
+
+    document.getElementById('copy-visual').addEventListener('click', () => {
+      navigator.clipboard.writeText(output.innerText);
+    });
+
+    document.getElementById('copy-raw').addEventListener('click', () => {
+      navigator.clipboard.writeText(lastRaw);
+    });
 
     document.getElementById('file').addEventListener('change', e => {
       if (e.target.files[0]) render(e.target.files[0]);
@@ -42,4 +185,5 @@
     });
   </script>
 </body>
+
 </html>
