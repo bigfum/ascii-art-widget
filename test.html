@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ascii-art-widget test</title>
+  <style>
+    body { background: #111; color: #eee; font-family: monospace; padding: 2rem; }
+    #drop { border: 2px dashed #555; padding: 2rem; text-align: center; margin-bottom: 1rem; cursor: pointer; }
+    #drop.over { border-color: #fff; }
+    pre { line-height: 1; font-size: 12px; white-space: pre; }
+  </style>
+</head>
+<body>
+  <div id="drop">drop an image here or <label style="cursor:pointer;text-decoration:underline">click to upload<input type="file" accept="image/*" style="display:none" id="file"></label></div>
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { imageToBlockArt } from './src/index.js';
+
+    async function render(source) {
+      document.getElementById('output').textContent = 'rendering...';
+      const art = await imageToBlockArt(source, { width: 120, height: 50 });
+      document.getElementById('output').textContent = art;
+    }
+
+    document.getElementById('file').addEventListener('change', e => {
+      if (e.target.files[0]) render(e.target.files[0]);
+    });
+
+    const drop = document.getElementById('drop');
+    drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+    drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+    drop.addEventListener('drop', e => {
+      e.preventDefault();
+      drop.classList.remove('over');
+      if (e.dataTransfer.files[0]) render(e.dataTransfer.files[0]);
+    });
+  </script>
+</body>
+</html>
