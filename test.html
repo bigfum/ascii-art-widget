@@ -98,6 +98,12 @@
         <option value="nearest">nearest</option>
       </select>
     </label>
+    <label id="alpha-mode-label" style="display:none">alpha
+      <select id="alpha-mode">
+        <option value="char">char density</option>
+        <option value="css">css opacity</option>
+      </select>
+    </label>
     <label>width: <span id="width-val">120</span>
       <input type="range" id="width" min="20" max="300" value="120">
     </label>
@@ -121,6 +127,8 @@
 
     const modeEl = document.getElementById('mode');
     const methodEl = document.getElementById('method');
+    const alphaModeEl = document.getElementById('alpha-mode');
+    const alphaModeLabelEl = document.getElementById('alpha-mode-label');
     const widthEl = document.getElementById('width');
     const heightEl = document.getElementById('height');
     const widthVal = document.getElementById('width-val');
@@ -129,8 +137,12 @@
 
     widthEl.addEventListener('input', () => { widthVal.textContent = widthEl.value; rerender(); });
     heightEl.addEventListener('input', () => { heightVal.textContent = heightEl.value; rerender(); });
-    modeEl.addEventListener('change', rerender);
+    modeEl.addEventListener('change', () => {
+      alphaModeLabelEl.style.display = modeEl.value === 'color' ? '' : 'none';
+      rerender();
+    });
     methodEl.addEventListener('change', rerender);
+    alphaModeEl.addEventListener('change', rerender);
 
     async function render(source) {
       lastSource = source;
@@ -147,6 +159,7 @@
         height: Number(heightEl.value),
         method: methodEl.value,
         mode,
+        alphaMode: alphaModeEl.value,
       });
 
       lastRaw = result;

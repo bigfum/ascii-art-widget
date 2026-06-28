@@ -28,7 +28,7 @@ export function cellsToString(cells, width, bg = { r: 0, g: 0, b: 0 }) {
   return out;
 }
 
-export function cellsToHtml(cells, width) {
+export function cellsToHtml(cells, width, alphaMode = 'char') {
   let html = '';
   let i = 0;
 
@@ -36,22 +36,28 @@ export function cellsToHtml(cells, width) {
     if (i > 0 && i % width === 0) html += '\n';
 
     const { r, g, b, a = 255 } = cells[i];
-    const char = alphaToChar(a);
     const ri = Math.round(r), gi = Math.round(g), bi = Math.round(b);
+    const ai = Math.round((a / 255) * 100) / 100;
+    const char = alphaMode === 'css' ? '█' : alphaToChar(a);
 
-    // RLE: find how many consecutive cells share the same color and char
     let j = i + 1;
     while (j < cells.length && j % width !== 0) {
       const c = cells[j];
       const ca = c.a ?? 255;
-      if (alphaToChar(ca) !== char) break;
+      const cchar = alphaMode === 'css' ? '█' : alphaToChar(ca);
+      if (cchar !== char) break;
       if (Math.round(c.r) !== ri || Math.round(c.g) !== gi || Math.round(c.b) !== bi) break;
+      if (alphaMode === 'css' && Math.round((ca / 255) * 100) / 100 !== ai) break;
       j++;
     }
 
+    const color = alphaMode === 'css'
+      ? `rgba(${ri},${gi},${bi},${ai})`
+      : `rgb(${ri},${gi},${bi})`;
+
     const run = char === ' '
       ? ' '.repeat(j - i)
-      : `<span style="color:rgb(${ri},${gi},${bi})">${char.repeat(j - i)}</span>`;
+      : `<span style="color:${color}">${char.repeat(j - i)}</span>`;
 
     html += run;
     i = j;

@@ -11,6 +11,7 @@ import { cellsToString, cellsToHtml } from './map.js';
  *   height?: number,
  *   method?: 'nearest' | 'area',
  *   mode?: 'luminance' | 'color',
+ *   alphaMode?: 'char' | 'css',
  *   bg?: { r: number, g: number, b: number }
  * }} options
  * @returns {Promise<string>}
@@ -20,11 +21,12 @@ export async function imageToBlockArt(source, {
     height = 40,
     method = 'area',
     mode = 'luminance',
+    alphaMode = 'char',
     bg = { r: 0, g: 0, b: 0 },
 } = {}) {
     const { data, width: srcWidth, height: srcHeight } = await decodeImage(source);
     const cells = sample(data, srcWidth, srcHeight, width, height, method);
     return mode === 'color'
-        ? cellsToHtml(cells, width)
+        ? cellsToHtml(cells, width, alphaMode)
         : cellsToString(cells, width, bg);
 }
