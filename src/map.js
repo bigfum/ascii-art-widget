@@ -13,17 +13,23 @@ function alphaToChar(a) {
   return CHARS[Math.round(a / 255 * (CHARS.length - 1))];
 }
 
-export function cellToChar({ r, g, b, a = 255 }, bg = { r: 0, g: 0, b: 0 }) {
+export function cellToChar({ r, g, b, a = 255 }, bg = { r: 0, g: 0, b: 0 }, invert = false) {
   const px = blendAgainstBg(r, g, b, a, bg);
   const luma = 0.299 * px.r + 0.587 * px.g + 0.114 * px.b;
-  return CHARS[Math.round(luma / 255 * (CHARS.length - 1))];
+  let idx = Math.round(luma / 255 * (CHARS.length - 1));
+  if (invert) {
+    // invert density but cap by alpha so transparent areas stay sparse
+    const alphaIdx = Math.round(a / 255 * (CHARS.length - 1));
+    idx = Math.min(CHARS.length - 1 - idx, alphaIdx);
+  }
+  return CHARS[idx];
 }
 
-export function cellsToString(cells, width, bg = { r: 0, g: 0, b: 0 }) {
+export function cellsToString(cells, width, bg = { r: 0, g: 0, b: 0 }, invert = false) {
   let out = '';
   for (let i = 0; i < cells.length; i++) {
     if (i > 0 && i % width === 0) out += '\n';
-    out += cellToChar(cells[i], bg);
+    out += cellToChar(cells[i], bg, invert);
   }
   return out;
 }

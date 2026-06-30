@@ -14,7 +14,8 @@ import { cellsToString, cellsToHtml } from './map.js';
  *   mode?: 'luminance' | 'color',
  *   alphaMode?: 'char' | 'css',
  *   posterize?: number,
- *   bg?: { r: number, g: number, b: number }
+ *   bg?: { r: number, g: number, b: number },
+ *   invert?: boolean,
  * }} options
  * @returns {Promise<{ result: string, stats: { plainChars: number, rawChars: number, spans?: number, cells?: number } }>}
  */
@@ -27,6 +28,7 @@ export async function imageToBlockArt(source, {
     posterize: posterizeLevels = 0,
     halfBlocks = false,
     bg = { r: 0, g: 0, b: 0 },
+    invert = false,
 } = {}) {
     const { data, width: srcWidth, height: srcHeight } = await decodeImage(source);
     const sampleHeight = halfBlocks ? height * 2 : height;
@@ -46,7 +48,7 @@ export async function imageToBlockArt(source, {
         };
     }
 
-    const result = cellsToString(cells, width, bg);
+    const result = cellsToString(cells, width, bg, invert);
     return {
         result,
         stats: { plainChars: result.length, rawChars: result.length },
